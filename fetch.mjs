@@ -7,6 +7,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+const UA = 'component-fetch/1.0 (+https://github.com/Turbial/component-fetch)';
+
 const SOURCES = {
   shadcn: { type: 'registry', urlTemplate: 'https://ui.shadcn.com/r/styles/default/{name}.json' },
   magicui: { type: 'registry', urlTemplate: 'https://magicui.design/r/{name}.json' },
@@ -32,14 +34,17 @@ function parseArgs(argv) {
   return args;
 }
 
+const FETCH_OPTS = { headers: { 'User-Agent': UA, Accept: 'application/json' } };
+const FETCH_TEXT_OPTS = { headers: { 'User-Agent': UA } };
+
 async function fetchJson(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, FETCH_OPTS);
   if (!res.ok) throw new Error(`fetch failed ${res.status}: ${url}`);
   return res.json();
 }
 
 async function fetchText(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, FETCH_TEXT_OPTS);
   if (!res.ok) throw new Error(`fetch failed ${res.status}: ${url}`);
   return res.text();
 }
