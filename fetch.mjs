@@ -7,7 +7,34 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const UA = 'component-fetch/1.0 (+https://github.com/Turbial/component-fetch)';
+// Retryable fetch with browser-ish User-Agent and exponential backoff.
+// Some registries sit behind Vercel/Cloudflare bot protection that 403s
+// bare requests, so we pretend to be a real-ish browser and retry.
+const UA = 'Mozilla/5.0 (compatible; component-fetch/1.0; +https://github.com/Turbial/component-fetch)';
+const MAX_RETRIES = 4;
+const BACKOFF_MS = [500, 1000, 2000, 4000];
+
+async function fetchWithRetry(url, opts, attempt = 0) {
+  const res = await fetch(url, opts);
+  if (res.ok) return res;
+  // Retry on 403, 429, or any 5xx
+  if ((res.status === 403 || res.status === 429 || (res.status >= 500 && res.status < 600)) && attempt < MAX_RETRIES - 1) {
+    const wait = BACKOFF_MS[attempt];
+    console.error(`  fetch ${res.status} ${url} — retrying in ${wait}ms (attempt ${attempt + 2}/${MAX_RETRIES})`);
+    await new Promise(r => setTimeout(r, wait));
+    return fetchWithRetry(url, opts, attempt + 1);
+  }
+  // On final failure, grab a snippet of the response body for debugging
+  let bodySnippet = '';
+  try {
+    const text = await res.text();
+    bodySnippet = text.slice(0, 300);
+  } catch {}
+  const indented = bodySnippet.replace(/\n/g, '\n  ');
+  throw new Error('fetch failed ' + res.status + ': ' + url + '\n  Response: ' + indented);
+}
+
+
 
 const SOURCES = {
   shadcn: { type: 'registry', urlTemplate: 'https://ui.shadcn.com/r/styles/default/{name}.json' },
@@ -34,18 +61,16 @@ function parseArgs(argv) {
   return args;
 }
 
-const FETCH_OPTS = { headers: { 'User-Agent': UA, Accept: 'application/json' } };
+const FETCH_JSON_OPTS = { headers: { 'User-Agent': UA, Accept: 'application/json' } };
 const FETCH_TEXT_OPTS = { headers: { 'User-Agent': UA } };
 
 async function fetchJson(url) {
-  const res = await fetch(url, FETCH_OPTS);
-  if (!res.ok) throw new Error(`fetch failed ${res.status}: ${url}`);
+  const res = await fetchWithRetry(url, FETCH_JSON_OPTS);
   return res.json();
 }
 
 async function fetchText(url) {
-  const res = await fetch(url, FETCH_TEXT_OPTS);
-  if (!res.ok) throw new Error(`fetch failed ${res.status}: ${url}`);
+  const res = await fetchWithRetry(url, FETCH_TEXT_OPTS);
   return res.text();
 }
 
