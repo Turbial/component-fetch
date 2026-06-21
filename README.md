@@ -12,6 +12,17 @@ just this one.
 
 ## Usage
 
+### npx (zero auth, from anywhere)
+
+```bash
+npx github:Turbial/component-fetch --source shadcn --name button --out ./out
+npx github:Turbial/component-fetch --source magicui --name marquee --out ./out
+npx github:Turbial/component-fetch --source 21st --name shadcn/accordion --out ./out
+npx github:Turbial/component-fetch --source hyperui --name marketing/ctas/1 --out ./out
+```
+
+### Direct (local install)
+
 ```bash
 node tools/component-fetch/fetch.mjs --source <source> --name <component-name> --out <output-dir>
 ```
