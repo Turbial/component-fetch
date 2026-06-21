@@ -1,12 +1,39 @@
 # component-fetch — Agent Instructions
 
-Pull named UI components from external registries. Zero auth.
+Pull named UI components from external registries (shadcn, magicui, 21st.dev, hyperui). Zero auth.
 
-⚠️ **Run this on your local machine, not in a sandboxed cloud env.**
-Vercel serverless, Netlify functions, OpenClaw agents in restricted runtimes,
-and similar sandboxes block outbound to component registries (403).
+## How it works
 
-## Quick ref (run locally)
+The tool normally fetches live from registry CDNs — but those CDNs are often
+unreachable from sandboxed runtimes (Vercel serverless, OpenClaw agents, etc.).
+There are **two workarounds** for offline/sandboxed use:
+
+### Option A: `--cachedir` (recommended for agents)
+
+Pre-fetch components on a machine with internet, then reuse the cache anywhere:
+
+```bash
+# Step 1 (on your local machine): mirror components into a cache dir
+node mirror.mjs --source shadcn --names button,card,input,label --cachedir ./registry-cache
+node mirror.mjs --source shadcn --names login-01 --cachedir ./registry-cache
+node mirror.mjs --source hyperui --names marketing/ctas/1 --cachedir ./registry-cache
+
+# Step 2 (anywhere): run from cache
+npx github:Turbial/component-fetch --source shadcn --name button --out ./out --cachedir ./registry-cache
+npx github:Turbial/component-fetch --source shadcn --name login-01 --out ./out --cachedir ./registry-cache
+# Dependencies (button, card, input, label) are also resolved from cache
+```
+
+### Option B: `--registry` (point at a proxy)
+
+Override the base URL to redirect through a proxy/GitHub raw:
+
+```bash
+npx github:Turbial/component-fetch --source shadcn --name button --out ./out \
+  --registry https://raw.githubusercontent.com/my-org/my-registry-mirror/main
+```
+
+## Quick ref (live, from any machine with internet)
 
 ```bash
 npx github:Turbial/component-fetch --source shadcn --name button --out ./out

@@ -12,11 +12,7 @@ just this one.
 
 ## Usage
 
-### npx (zero auth, from your machine)
-
-Run this on **your local machine** (or any CI runner with general internet access).
-Does NOT work from Vercel serverless, Netlify edge functions, or other sandboxed
-execution environments that block outbound to component registries.
+### Live (from any machine with internet)
 
 ```bash
 npx github:Turbial/component-fetch --source shadcn --name button --out ./out
@@ -25,18 +21,47 @@ npx github:Turbial/component-fetch --source 21st --name shadcn/accordion --out .
 npx github:Turbial/component-fetch --source hyperui --name marketing/ctas/1 --out ./out
 ```
 
+### Offline / sandboxed runtime (Vercel, OpenClaw agents, etc.)
+
+Component registries block outbound from sandboxed environments. Use `--cachedir`
+to work from a pre-fetched mirror:
+
+```bash
+# Step 1 — on a machine with internet, mirror what you need:
+npx github:Turbial/component-fetch --source shadcn --name button --out ./out --cachedir ./registry-cache
+# ^ this caches the fetched file, next run from cache hits only
+
+# Or pre-populate via the mirror script:
+npm explore -g component-fetch -- node mirror.mjs \
+  --source shadcn --names button,card,input,label,login-01 --cachedir ./registry-cache
+
+# Step 2 — from any (sandboxed) runtime:
+npx github:Turbial/component-fetch --source shadcn --name login-01 --out ./out \
+  --cachedir ./registry-cache
+# Dependencies (button, card, input, label) are also resolved from cache.
+```
+
+You can also override the registry URL with `--registry` to point at a GitHub
+raw mirror or any other accessible proxy.
+
 ### Direct (local install)
 
 ```bash
 node tools/component-fetch/fetch.mjs --source <source> --name <component-name> --out <output-dir>
 ```
 
-| Source    | `--name` format        | Example                                            | Notes |
-|-----------|-------------------------|-----------------------------------------------------|-------|
-| `shadcn`  | component or block id  | `--source shadcn --name login-01`                  | Official registry. Recursively pulls `registryDependencies` (e.g. `login-01` also pulls `button`, `card`, `input`, `label`). |
-| `magicui` | component id            | `--source magicui --name marquee`                  | Same registry schema as shadcn. |
-| `21st`    | `author/component`      | `--source 21st --name shadcn/accordion`            | Community marketplace; quality varies, visually vet before use. |
-| `hyperui` | `category/subcategory/index` | `--source hyperui --name marketing/ctas/1`   | Plain HTML + Tailwind classes, no framework — easiest to drop into a non-React site. |
+### Direct (local install)
+
+```bash
+node tools/component-fetch/fetch.mjs --source <source> --name <component-name> --out <output-dir>
+```
+
+| Source    | `--name` format             | Example                          | Notes                                                     |
+|-----------|------------------------------|----------------------------------|-----------------------------------------------------------|
+| `shadcn`  | component or block id        | `--source shadcn --name login-01` | Official registry. Recursively pulls `registryDependencies`. |
+| `magicui` | component id                 | `--source magicui --name marquee` | Same registry schema as shadcn.                           |
+| `21st`    | `author/component`           | `--source 21st --name shadcn/accordion` | Community marketplace; quality varies.                |
+| `hyperui` | `category/subcategory/index` | `--source hyperui --name marketing/ctas/1` | Plain HTML + Tailwind, no framework.                  |
 
 Browse names first:
 - shadcn/magicui: browse https://ui.shadcn.com or https://magicui.design, the slug in the docs URL is the `--name`.
