@@ -7,7 +7,7 @@
   "private": true,
   "bin": {
     "component-fetch": "./fetch.mjs",
-    "web-components-fetch": "./fetch.mjs"
+    "cfetch": "./fetch.mjs"
   },
   "files": [
     "fetch.mjs",
