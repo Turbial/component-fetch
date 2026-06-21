@@ -12,7 +12,11 @@ just this one.
 
 ## Usage
 
-### npx (zero auth, from anywhere)
+### npx (zero auth, from your machine)
+
+Run this on **your local machine** (or any CI runner with general internet access).
+Does NOT work from Vercel serverless, Netlify edge functions, or other sandboxed
+execution environments that block outbound to component registries.
 
 ```bash
 npx github:Turbial/component-fetch --source shadcn --name button --out ./out
